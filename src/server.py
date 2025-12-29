@@ -159,4 +159,22 @@ async def dog_by_breed(breed: str) -> list:
 
 # Start the server so Goose can connect via stdio
 if __name__ == "__main__":
-    server.run(transport="stdio")
+    import sys
+    import logging
+    
+    # Set up logging to stderr so we can see errors
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler(sys.stderr)]
+    )
+    
+    logger = logging.getLogger(__name__)
+    logger.info("Starting Dog MCP Server...")
+    logger.info(f"Registered tools: randomDog, dogByBreed")
+    
+    try:
+        server.run(transport="stdio")
+    except Exception as e:
+        logger.error(f"Server error: {e}", exc_info=True)
+        sys.exit(1)
