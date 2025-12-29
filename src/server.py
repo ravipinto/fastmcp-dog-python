@@ -5,7 +5,6 @@ from typing import Optional
 from fastmcp import FastMCP
 from pydantic import BaseModel, Field
 import httpx
-from mcp.types import TextContent
 
 
 # Create a new FastMCP server instance
@@ -111,19 +110,13 @@ class DogByBreedParams(BaseModel):
     name="randomDog",
     description="Get a random dog image",
 )
-async def random_dog() -> list:
+async def random_dog() -> str:
     """Fetch a random dog image from dog.ceo API"""
     async with httpx.AsyncClient() as client:
         res = await client.get("https://dog.ceo/api/breeds/image/random")
         data = res.json()
         image_url = data.get("message")
-
-        return [
-            TextContent(
-                type="text",
-                text=f"Here's a random dog:\n{image_url}"
-            )
-        ]
+        return f"Here's a random dog:\n{image_url}"
 
 
 # 🐶 Tool 2: Dog by breed
@@ -131,7 +124,7 @@ async def random_dog() -> list:
     name="dogByBreed",
     description="Get a random image of a specific dog breed",
 )
-async def dog_by_breed(breed: str) -> list:
+async def dog_by_breed(breed: str) -> str:
     """Fetch a random dog image of a specific breed"""
     async with httpx.AsyncClient() as client:
         res = await client.get(f"https://dog.ceo/api/breed/{breed}/images/random")
@@ -140,21 +133,10 @@ async def dog_by_breed(breed: str) -> list:
         # Handle errors from the API
         if data.get("status") != "success":
             error_msg = data.get("message", "Unknown error")
-            return [
-                TextContent(
-                    type="text",
-                    text=f"Error: Could not find breed '{breed}'. {error_msg}\n\nTip: Try using common breed names like 'poodle', 'husky', 'golden retriever', 'labrador', etc."
-                )
-            ]
+            return f"Error: Could not find breed '{breed}'. {error_msg}\n\nTip: Try using common breed names like 'poodle', 'husky', 'golden retriever', 'labrador', etc."
         
         image_url = data.get("message")
-
-        return [
-            TextContent(
-                type="text",
-                text=f"Here's a random {breed}:\n{image_url}"
-            )
-        ]
+        return f"Here's a random {breed}:\n{image_url}"
 
 
 # Start the server so Goose can connect via stdio
