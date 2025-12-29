@@ -10,7 +10,6 @@ import httpx
 # Create a new FastMCP server instance
 server = FastMCP(
     name="Dog MCP Server",  # The name that Goose will display
-    version="1.0.0",        # Version of your server
 )
 
 
