@@ -5,6 +5,7 @@ from typing import Optional
 from fastmcp import FastMCP
 from pydantic import BaseModel, Field
 import httpx
+from mcp.types import TextContent
 
 
 # Create a new FastMCP server instance
@@ -105,76 +106,55 @@ class DogByBreedParams(BaseModel):
     breed: str = Field(..., description="The breed of the dog (e.g., 'husky', 'pug')")
 
 
-# 🐕 Tool 1: Random dog (with UI)
+# 🐕 Tool 1: Random dog
 @server.tool(
     name="randomDog",
     description="Get a random dog image",
 )
-async def random_dog() -> dict:
+async def random_dog() -> list:
     """Fetch a random dog image from dog.ceo API"""
     async with httpx.AsyncClient() as client:
         res = await client.get("https://dog.ceo/api/breeds/image/random")
         data = res.json()
         image_url = data.get("message")
 
-        return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": f"Here's a random dog:\n{image_url}"
-                },
-                {
-                    "type": "resource",
-                    "resource": {
-                        "uri": f"ui://dog/random/{urllib.parse.quote(image_url)}",
-                        "mimeType": "text/html",
-                        "contents": [
-                            {
-                                "encoding": "utf-8",
-                                "mimeType": "text/html",
-                                "data": dog_card_html(image_url)
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
+        return [
+            TextContent(
+                type="text",
+                text=f"Here's a random dog:\n{image_url}"
+            )
+        ]
 
 
-# 🐶 Tool 2: Dog by breed (with UI)
+# 🐶 Tool 2: Dog by breed
 @server.tool(
     name="dogByBreed",
     description="Get a random image of a specific dog breed",
 )
-async def dog_by_breed(breed: str) -> dict:
+async def dog_by_breed(breed: str) -> list:
     """Fetch a random dog image of a specific breed"""
     async with httpx.AsyncClient() as client:
         res = await client.get(f"https://dog.ceo/api/breed/{breed}/images/random")
         data = res.json()
+        
+        # Handle errors from the API
+        if data.get("status") != "success":
+            error_msg = data.get("message", "Unknown error")
+            return [
+                TextContent(
+                    type="text",
+                    text=f"Error: Could not find breed '{breed}'. {error_msg}\n\nTip: Try using common breed names like 'poodle', 'husky', 'golden retriever', 'labrador', etc."
+                )
+            ]
+        
         image_url = data.get("message")
 
-        return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": f"Random {breed}: {image_url}"
-                },
-                {
-                    "type": "resource",
-                    "resource": {
-                        "uri": f"ui://dog/breed/{urllib.parse.quote(breed)}/{urllib.parse.quote(image_url)}",
-                        "mimeType": "text/html",
-                        "contents": [
-                            {
-                                "encoding": "utf-8",
-                                "mimeType": "text/html",
-                                "data": dog_card_html(image_url, breed)
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
+        return [
+            TextContent(
+                type="text",
+                text=f"Here's a random {breed}:\n{image_url}"
+            )
+        ]
 
 
 # Start the server so Goose can connect via stdio
